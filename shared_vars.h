@@ -10,5 +10,6 @@
 
 extern float fVal;
 extern float fResult;
+extern float debug_d;
 
 #endif /* SHARED_VARS_H_ */

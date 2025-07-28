@@ -59,20 +59,33 @@ extern "C"
 //*****************************************************************************
 
 //
-// SCIA -> SCI0 Pinmux
+// EPWM1 -> myEPWM1 Pinmux
 //
 //
-// SCIRXDA - GPIO Settings
+// EPWM1A - GPIO Settings
 //
-#define GPIO_PIN_SCIRXDA 43
-#define SCI0_SCIRX_GPIO 43
-#define SCI0_SCIRX_PIN_CONFIG GPIO_43_SCIRXDA
+#define GPIO_PIN_EPWM1A 0
+#define myEPWM1_EPWMA_GPIO 0
+#define myEPWM1_EPWMA_PIN_CONFIG GPIO_0_EPWM1A
 //
-// SCITXDA - GPIO Settings
+// GPIO122 - GPIO Settings
 //
-#define GPIO_PIN_SCITXDA 42
-#define SCI0_SCITX_GPIO 42
-#define SCI0_SCITX_PIN_CONFIG GPIO_42_SCITXDA
+#define myGPIO0_GPIO_PIN_CONFIG GPIO_122_GPIO122
+
+//*****************************************************************************
+//
+// ADC Configurations
+//
+//*****************************************************************************
+#define ADC0_BASE ADCA_BASE
+#define ADC0_RESULT_BASE ADCARESULT_BASE
+#define ADC0_SOC0 ADC_SOC_NUMBER0
+#define ADC0_FORCE_SOC0 ADC_FORCE_SOC0
+#define ADC0_SAMPLE_WINDOW_SOC0 75
+#define ADC0_TRIGGER_SOURCE_SOC0 ADC_TRIGGER_EPWM1_SOCA
+#define ADC0_CHANNEL_SOC0 ADC_CH_ADCIN0
+void ADC0_init();
+
 
 //*****************************************************************************
 //
@@ -92,21 +105,66 @@ void myCLA0_init();
 
 //*****************************************************************************
 //
+// CPUTIMER Configurations
+//
+//*****************************************************************************
+#define myCPUTIMER1_BASE CPUTIMER1_BASE
+void myCPUTIMER1_init();
+
+//*****************************************************************************
+//
+// DAC Configurations
+//
+//*****************************************************************************
+#define DAC0_BASE DACB_BASE
+void DAC0_init();
+
+//*****************************************************************************
+//
+// EPWM Configurations
+//
+//*****************************************************************************
+#define myEPWM1_BASE EPWM1_BASE
+#define myEPWM1_TBPRD 5000
+#define myEPWM1_COUNTER_MODE EPWM_COUNTER_MODE_UP_DOWN
+#define myEPWM1_TBPHS 0
+#define myEPWM1_CMPA 2500
+#define myEPWM1_CMPB 1
+#define myEPWM1_CMPC 0
+#define myEPWM1_CMPD 0
+#define myEPWM1_DBRED 0
+#define myEPWM1_DBFED 0
+#define myEPWM1_TZA_ACTION EPWM_TZ_ACTION_HIGH_Z
+#define myEPWM1_TZB_ACTION EPWM_TZ_ACTION_HIGH_Z
+#define myEPWM1_INTERRUPT_SOURCE EPWM_INT_TBCTR_ZERO
+
+//*****************************************************************************
+//
+// GPIO Configurations
+//
+//*****************************************************************************
+#define myGPIO0 122
+void myGPIO0_init();
+
+//*****************************************************************************
+//
+// INPUTXBAR Configurations
+//
+//*****************************************************************************
+#define myINPUTXBARINPUT0_SOURCE 122
+#define myINPUTXBARINPUT0_INPUT XBAR_INPUT4
+void myINPUTXBARINPUT0_init();
+
+//*****************************************************************************
+//
 // INTERRUPT Configurations
 //
 //*****************************************************************************
 
-// Interrupt Settings for INT_myCLA01
+// Interrupt Settings for INT_myCPUTIMER1
 // ISR need to be defined for the registered interrupts
-#define INT_myCLA01 INT_CLA1_1
-#define INT_myCLA01_INTERRUPT_ACK_GROUP INTERRUPT_ACK_GROUP11
-extern __interrupt void cla1Isr1(void);
-
-// Interrupt Settings for INT_SCI0_RX
-// ISR need to be defined for the registered interrupts
-#define INT_SCI0_RX INT_SCIA_RX
-#define INT_SCI0_RX_INTERRUPT_ACK_GROUP INTERRUPT_ACK_GROUP9
-extern __interrupt void INT_SCI0_RX_ISR(void);
+#define INT_myCPUTIMER1 INT_TIMER1
+extern __interrupt void INT_myCPUTIMER1_ISR(void);
 
 //*****************************************************************************
 //
@@ -116,17 +174,18 @@ extern __interrupt void INT_SCI0_RX_ISR(void);
 
 //*****************************************************************************
 //
-// SCI Configurations
+// SYNC Scheme Configurations
 //
 //*****************************************************************************
-#define SCI0_BASE SCIA_BASE
-#define SCI0_BAUDRATE 115200
-#define SCI0_CONFIG_WLEN SCI_CONFIG_WLEN_8
-#define SCI0_CONFIG_STOP SCI_CONFIG_STOP_ONE
-#define SCI0_CONFIG_PAR SCI_CONFIG_PAR_NONE
-#define SCI0_FIFO_TX_LVL SCI_FIFO_TX0
-#define SCI0_FIFO_RX_LVL SCI_FIFO_RX4
-void SCI0_init();
+
+//*****************************************************************************
+//
+// XINT Configurations
+//
+//*****************************************************************************
+#define myGPIO0_XINT GPIO_INT_XINT1
+#define myGPIO0_XINT_TYPE GPIO_INT_TYPE_BOTH_EDGES
+void myGPIO0_XINT_init();
 
 //*****************************************************************************
 //
@@ -134,10 +193,17 @@ void SCI0_init();
 //
 //*****************************************************************************
 void	Board_init();
+void	ADC_init();
 void	CLA_init();
+void	CPUTIMER_init();
+void	DAC_init();
+void	EPWM_init();
+void	GPIO_init();
+void	INPUTXBAR_init();
 void	INTERRUPT_init();
 void	MEMCFG_init();
-void	SCI_init();
+void	SYNC_init();
+void	XINT_init();
 void	PinMux_init();
 
 //*****************************************************************************

@@ -1,12 +1,8 @@
 {
     "interruptInfo" : [
         {
-            "interruptName": "INT_myCLA01",
-            "interruptHandler": "cla1Isr1"
-        },
-        {
-            "interruptName": "INT_SCI0_RX",
-            "interruptHandler": "INT_SCI0_RX_ISR"
+            "interruptName": "INT_myCPUTIMER1",
+            "interruptHandler": "INT_myCPUTIMER1_ISR"
         }
     ]
 }

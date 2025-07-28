@@ -48,9 +48,16 @@ void Board_init()
 	EALLOW;
 
 	PinMux_init();
+	INPUTXBAR_init();
+	SYNC_init();
 	CLA_init();
 	MEMCFG_init();
-	SCI_init();
+	ADC_init();
+	CPUTIMER_init();
+	DAC_init();
+	EPWM_init();
+	GPIO_init();
+	XINT_init();
 	INTERRUPT_init();
 
 	EDIS;
@@ -68,18 +75,83 @@ void PinMux_init()
 	//
 	
 	//
-	// SCIA -> SCI0 Pinmux
+	// EPWM1 -> myEPWM1 Pinmux
 	//
-	GPIO_setPinConfig(SCI0_SCIRX_PIN_CONFIG);
-	GPIO_setPadConfig(SCI0_SCIRX_GPIO, GPIO_PIN_TYPE_STD | GPIO_PIN_TYPE_PULLUP);
-	GPIO_setQualificationMode(SCI0_SCIRX_GPIO, GPIO_QUAL_ASYNC);
+	GPIO_setPinConfig(myEPWM1_EPWMA_PIN_CONFIG);
+	GPIO_setPadConfig(myEPWM1_EPWMA_GPIO, GPIO_PIN_TYPE_STD);
+	GPIO_setQualificationMode(myEPWM1_EPWMA_GPIO, GPIO_QUAL_SYNC);
 
-	GPIO_setPinConfig(SCI0_SCITX_PIN_CONFIG);
-	GPIO_setPadConfig(SCI0_SCITX_GPIO, GPIO_PIN_TYPE_STD | GPIO_PIN_TYPE_PULLUP);
-	GPIO_setQualificationMode(SCI0_SCITX_GPIO, GPIO_QUAL_ASYNC);
-
+	// GPIO122 -> myGPIO0 Pinmux
+	GPIO_setPinConfig(GPIO_122_GPIO122);
 
 }
+
+//*****************************************************************************
+//
+// ADC Configurations
+//
+//*****************************************************************************
+void ADC_init(){
+	ADC0_init();
+}
+
+void ADC0_init(){
+	//
+	// Configures the analog-to-digital converter module prescaler.
+	//
+	ADC_setPrescaler(ADC0_BASE, ADC_CLK_DIV_4_0);
+	//
+	// Configures the analog-to-digital converter resolution and signal mode.
+	//
+	ADC_setMode(ADC0_BASE, ADC_RESOLUTION_12BIT, ADC_MODE_SINGLE_ENDED);
+	//
+	// Sets the timing of the end-of-conversion pulse
+	//
+	ADC_setInterruptPulseMode(ADC0_BASE, ADC_PULSE_END_OF_CONV);
+	//
+	// Powers up the analog-to-digital converter core.
+	//
+	ADC_enableConverter(ADC0_BASE);
+	//
+	// Delay for 1ms to allow ADC time to power up
+	//
+	DEVICE_DELAY_US(500);
+	//
+	// SOC Configuration: Setup ADC EPWM channel and trigger settings
+	//
+	// Disables SOC burst mode.
+	//
+	ADC_disableBurstMode(ADC0_BASE);
+	//
+	// Sets the priority mode of the SOCs.
+	//
+	ADC_setSOCPriority(ADC0_BASE, ADC_PRI_ALL_ROUND_ROBIN);
+	//
+	// Start of Conversion 0 Configuration
+	//
+	//
+	// Configures a start-of-conversion (SOC) in the ADC and its interrupt SOC trigger.
+	// 	  	SOC number		: 0
+	//	  	Trigger			: ADC_TRIGGER_EPWM1_SOCA
+	//	  	Channel			: ADC_CH_ADCIN0
+	//	 	Sample Window	: 15 SYSCLK cycles
+	//		Interrupt Trigger: ADC_INT_SOC_TRIGGER_NONE
+	//
+	ADC_setupSOC(ADC0_BASE, ADC_SOC_NUMBER0, ADC_TRIGGER_EPWM1_SOCA, ADC_CH_ADCIN0, 15U);
+	ADC_setInterruptSOCTrigger(ADC0_BASE, ADC_SOC_NUMBER0, ADC_INT_SOC_TRIGGER_NONE);
+	//
+	// ADC Interrupt 1 Configuration
+	// 		Source	: ADC_SOC_NUMBER0
+	// 		Interrupt Source: enabled
+	//		Continuous Mode	: enabled
+	//
+	//
+	ADC_setInterruptSource(ADC0_BASE, ADC_INT_NUMBER1, ADC_SOC_NUMBER0);
+	ADC_clearInterruptStatus(ADC0_BASE, ADC_INT_NUMBER1);
+	ADC_enableContinuousMode(ADC0_BASE, ADC_INT_NUMBER1);
+	ADC_enableInterrupt(ADC0_BASE, ADC_INT_NUMBER1);
+}
+
 
 //*****************************************************************************
 //
@@ -98,7 +170,7 @@ void myCLA0_init(){
     // CLA Task 1
     //
     CLA_mapTaskVector(myCLA0_BASE, CLA_MVECT_1, (uint16_t)&Cla1Task1);
-    CLA_setTriggerSource(CLA_TASK_1, CLA_TRIGGER_SOFTWARE);
+    CLA_setTriggerSource(CLA_TASK_1, CLA_TRIGGER_ADCA1);
 #pragma diag_warning=770
 	//
     // Enable the IACK instruction to start a task on CLA in software
@@ -137,20 +209,136 @@ void CLA_init()
 
 //*****************************************************************************
 //
+// CPUTIMER Configurations
+//
+//*****************************************************************************
+void CPUTIMER_init(){
+	myCPUTIMER1_init();
+}
+
+void myCPUTIMER1_init(){
+	CPUTimer_setEmulationMode(myCPUTIMER1_BASE, CPUTIMER_EMULATIONMODE_RUNFREE);
+	CPUTimer_setPreScaler(myCPUTIMER1_BASE, 0U);
+	CPUTimer_setPeriod(myCPUTIMER1_BASE, 9999U);
+	CPUTimer_enableInterrupt(myCPUTIMER1_BASE);
+	CPUTimer_stopTimer(myCPUTIMER1_BASE);
+
+	CPUTimer_reloadTimerCounter(myCPUTIMER1_BASE);
+	CPUTimer_startTimer(myCPUTIMER1_BASE);
+}
+
+//*****************************************************************************
+//
+// DAC Configurations
+//
+//*****************************************************************************
+void DAC_init(){
+	DAC0_init();
+}
+
+void DAC0_init(){
+	//
+	// Set DAC reference voltage.
+	//
+	DAC_setReferenceVoltage(DAC0_BASE, DAC_REF_ADC_VREFHI);
+	//
+	// Set DAC load mode.
+	//
+	DAC_setLoadMode(DAC0_BASE, DAC_LOAD_SYSCLK);
+	//
+	// Enable the DAC output
+	//
+	DAC_enableOutput(DAC0_BASE);
+	//
+	// Set the DAC shadow output
+	//
+	DAC_setShadowValue(DAC0_BASE, 0U);
+
+	//
+	// Delay for buffered DAC to power up.
+	//
+	DEVICE_DELAY_US(500);
+}
+
+//*****************************************************************************
+//
+// EPWM Configurations
+//
+//*****************************************************************************
+void EPWM_init(){
+    EPWM_setEmulationMode(myEPWM1_BASE, EPWM_EMULATION_FREE_RUN);	
+    EPWM_setClockPrescaler(myEPWM1_BASE, EPWM_CLOCK_DIVIDER_2, EPWM_HSCLOCK_DIVIDER_1);	
+    EPWM_setTimeBasePeriod(myEPWM1_BASE, 5000);	
+    EPWM_setTimeBaseCounter(myEPWM1_BASE, 0);	
+    EPWM_setTimeBaseCounterMode(myEPWM1_BASE, EPWM_COUNTER_MODE_UP_DOWN);	
+    EPWM_disablePhaseShiftLoad(myEPWM1_BASE);	
+    EPWM_setPhaseShift(myEPWM1_BASE, 0);	
+    EPWM_setCounterCompareValue(myEPWM1_BASE, EPWM_COUNTER_COMPARE_A, 2500);	
+    EPWM_setCounterCompareShadowLoadMode(myEPWM1_BASE, EPWM_COUNTER_COMPARE_A, EPWM_COMP_LOAD_ON_CNTR_ZERO);	
+    EPWM_setCounterCompareValue(myEPWM1_BASE, EPWM_COUNTER_COMPARE_B, 1);	
+    EPWM_setCounterCompareShadowLoadMode(myEPWM1_BASE, EPWM_COUNTER_COMPARE_B, EPWM_COMP_LOAD_ON_CNTR_ZERO);	
+    EPWM_setActionQualifierAction(myEPWM1_BASE, EPWM_AQ_OUTPUT_A, EPWM_AQ_OUTPUT_NO_CHANGE, EPWM_AQ_OUTPUT_ON_TIMEBASE_ZERO);	
+    EPWM_setActionQualifierAction(myEPWM1_BASE, EPWM_AQ_OUTPUT_A, EPWM_AQ_OUTPUT_NO_CHANGE, EPWM_AQ_OUTPUT_ON_TIMEBASE_PERIOD);	
+    EPWM_setActionQualifierAction(myEPWM1_BASE, EPWM_AQ_OUTPUT_A, EPWM_AQ_OUTPUT_HIGH, EPWM_AQ_OUTPUT_ON_TIMEBASE_UP_CMPA);	
+    EPWM_setActionQualifierAction(myEPWM1_BASE, EPWM_AQ_OUTPUT_A, EPWM_AQ_OUTPUT_LOW, EPWM_AQ_OUTPUT_ON_TIMEBASE_DOWN_CMPA);	
+    EPWM_setActionQualifierAction(myEPWM1_BASE, EPWM_AQ_OUTPUT_A, EPWM_AQ_OUTPUT_NO_CHANGE, EPWM_AQ_OUTPUT_ON_TIMEBASE_UP_CMPB);	
+    EPWM_setActionQualifierAction(myEPWM1_BASE, EPWM_AQ_OUTPUT_A, EPWM_AQ_OUTPUT_NO_CHANGE, EPWM_AQ_OUTPUT_ON_TIMEBASE_DOWN_CMPB);	
+    EPWM_setActionQualifierAction(myEPWM1_BASE, EPWM_AQ_OUTPUT_B, EPWM_AQ_OUTPUT_NO_CHANGE, EPWM_AQ_OUTPUT_ON_TIMEBASE_ZERO);	
+    EPWM_setActionQualifierAction(myEPWM1_BASE, EPWM_AQ_OUTPUT_B, EPWM_AQ_OUTPUT_NO_CHANGE, EPWM_AQ_OUTPUT_ON_TIMEBASE_PERIOD);	
+    EPWM_setActionQualifierAction(myEPWM1_BASE, EPWM_AQ_OUTPUT_B, EPWM_AQ_OUTPUT_NO_CHANGE, EPWM_AQ_OUTPUT_ON_TIMEBASE_UP_CMPA);	
+    EPWM_setActionQualifierAction(myEPWM1_BASE, EPWM_AQ_OUTPUT_B, EPWM_AQ_OUTPUT_NO_CHANGE, EPWM_AQ_OUTPUT_ON_TIMEBASE_DOWN_CMPA);	
+    EPWM_setActionQualifierAction(myEPWM1_BASE, EPWM_AQ_OUTPUT_B, EPWM_AQ_OUTPUT_NO_CHANGE, EPWM_AQ_OUTPUT_ON_TIMEBASE_UP_CMPB);	
+    EPWM_setActionQualifierAction(myEPWM1_BASE, EPWM_AQ_OUTPUT_B, EPWM_AQ_OUTPUT_NO_CHANGE, EPWM_AQ_OUTPUT_ON_TIMEBASE_DOWN_CMPB);	
+    EPWM_setRisingEdgeDelayCountShadowLoadMode(myEPWM1_BASE, EPWM_RED_LOAD_ON_CNTR_ZERO);	
+    EPWM_disableRisingEdgeDelayCountShadowLoadMode(myEPWM1_BASE);	
+    EPWM_setFallingEdgeDelayCountShadowLoadMode(myEPWM1_BASE, EPWM_FED_LOAD_ON_CNTR_ZERO);	
+    EPWM_disableFallingEdgeDelayCountShadowLoadMode(myEPWM1_BASE);	
+    EPWM_enableInterrupt(myEPWM1_BASE);	
+    EPWM_setInterruptSource(myEPWM1_BASE, EPWM_INT_TBCTR_ZERO);	
+    EPWM_setInterruptEventCount(myEPWM1_BASE, 1);	
+}
+
+//*****************************************************************************
+//
+// GPIO Configurations
+//
+//*****************************************************************************
+void GPIO_init(){
+	myGPIO0_init();
+}
+
+void myGPIO0_init(){
+	GPIO_writePin(myGPIO0, 0);
+	GPIO_setPadConfig(myGPIO0, GPIO_PIN_TYPE_STD);
+	GPIO_setQualificationMode(myGPIO0, GPIO_QUAL_SYNC);
+	GPIO_setDirectionMode(myGPIO0, GPIO_DIR_MODE_IN);
+	GPIO_setControllerCore(myGPIO0, GPIO_CORE_CPU1);
+}
+
+//*****************************************************************************
+//
+// INPUTXBAR Configurations
+//
+//*****************************************************************************
+void INPUTXBAR_init(){
+	myINPUTXBARINPUT0_init();
+}
+
+void myINPUTXBARINPUT0_init(){
+	XBAR_setInputPin(myINPUTXBARINPUT0_INPUT, myINPUTXBARINPUT0_SOURCE);
+}
+
+//*****************************************************************************
+//
 // INTERRUPT Configurations
 //
 //*****************************************************************************
 void INTERRUPT_init(){
 	
-	// Interrupt Settings for INT_myCLA01
+	// Interrupt Settings for INT_myCPUTIMER1
 	// ISR need to be defined for the registered interrupts
-	Interrupt_register(INT_myCLA01, &cla1Isr1);
-	Interrupt_enable(INT_myCLA01);
-	
-	// Interrupt Settings for INT_SCI0_RX
-	// ISR need to be defined for the registered interrupts
-	Interrupt_register(INT_SCI0_RX, &INT_SCI0_RX_ISR);
-	Interrupt_disable(INT_SCI0_RX);
+	Interrupt_register(INT_myCPUTIMER1, &INT_myCPUTIMER1_ISR);
+	Interrupt_enable(INT_myCPUTIMER1);
 }
 //*****************************************************************************
 //
@@ -242,25 +430,40 @@ void MEMCFG_init(){
 }        
 //*****************************************************************************
 //
-// SCI Configurations
+// SYNC Scheme Configurations
 //
 //*****************************************************************************
-void SCI_init(){
-	SCI0_init();
+void SYNC_init(){
+	SysCtl_setSyncOutputConfig(SYSCTL_SYNC_OUT_SRC_EPWM1SYNCOUT);
+	//
+	// For EPWM1, the sync input is: SYSCTL_SYNC_IN_SRC_EXTSYNCIN1
+	//
+	SysCtl_setSyncInputConfig(SYSCTL_SYNC_IN_EPWM4, SYSCTL_SYNC_IN_SRC_EPWM1SYNCOUT);
+	SysCtl_setSyncInputConfig(SYSCTL_SYNC_IN_EPWM7, SYSCTL_SYNC_IN_SRC_EPWM1SYNCOUT);
+	SysCtl_setSyncInputConfig(SYSCTL_SYNC_IN_EPWM10, SYSCTL_SYNC_IN_SRC_EPWM1SYNCOUT);
+	SysCtl_setSyncInputConfig(SYSCTL_SYNC_IN_ECAP1, SYSCTL_SYNC_IN_SRC_EPWM1SYNCOUT);
+	SysCtl_setSyncInputConfig(SYSCTL_SYNC_IN_ECAP4, SYSCTL_SYNC_IN_SRC_EPWM1SYNCOUT);
+	//
+	// SOCA
+	//
+	SysCtl_enableExtADCSOCSource(0);
+	//
+	// SOCB
+	//
+	SysCtl_enableExtADCSOCSource(0);
+}
+//*****************************************************************************
+//
+// XINT Configurations
+//
+//*****************************************************************************
+void XINT_init(){
+	myGPIO0_XINT_init();
 }
 
-void SCI0_init(){
-	SCI_clearInterruptStatus(SCI0_BASE, SCI_INT_RXFF | SCI_INT_TXFF | SCI_INT_FE | SCI_INT_OE | SCI_INT_PE | SCI_INT_RXERR | SCI_INT_RXRDY_BRKDT | SCI_INT_TXRDY);
-	SCI_clearOverflowStatus(SCI0_BASE);
-	SCI_resetTxFIFO(SCI0_BASE);
-	SCI_resetRxFIFO(SCI0_BASE);
-	SCI_resetChannels(SCI0_BASE);
-	SCI_setConfig(SCI0_BASE, DEVICE_LSPCLK_FREQ, SCI0_BAUDRATE, (SCI_CONFIG_WLEN_8|SCI_CONFIG_STOP_ONE|SCI_CONFIG_PAR_NONE));
-	SCI_disableLoopback(SCI0_BASE);
-	SCI_performSoftwareReset(SCI0_BASE);
-	SCI_enableInterrupt(SCI0_BASE, SCI_INT_RXFF);
-	SCI_setFIFOInterruptLevel(SCI0_BASE, SCI_FIFO_TX0, SCI_FIFO_RX4);
-	SCI_enableFIFO(SCI0_BASE);
-	SCI_enableModule(SCI0_BASE);
+void myGPIO0_XINT_init(){
+	GPIO_setInterruptType(myGPIO0_XINT, GPIO_INT_TYPE_BOTH_EDGES);
+	GPIO_setInterruptPin(myGPIO0, myGPIO0_XINT);
+	GPIO_enableInterrupt(myGPIO0_XINT);
 }
 

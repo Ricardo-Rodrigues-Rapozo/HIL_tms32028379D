@@ -15,7 +15,7 @@ CLA_SRCS += \
 ../tasks.cla 
 
 LIB_SRCS += \
-D:/ti/c2000/C2000Ware_5_04_00_00/driverlib/f2837xd/driverlib/ccs/Debug/driverlib.lib 
+C:/ti/c2000/C2000Ware_5_04_00_00/driverlib/f2837xd/driverlib/ccs/Debug/driverlib.lib 
 
 C_SRCS += \
 ./syscfg/board.c \
@@ -64,6 +64,8 @@ GEN_MISC_FILES += \
 ./syscfg/board.cmd.genlibs \
 ./syscfg/board.json \
 ./syscfg/pinmux.csv \
+./syscfg/epwm.dot \
+./syscfg/adc.dot \
 ./syscfg/device_cmd.h \
 ./syscfg/device_cmd.cmd.genlibs \
 ./syscfg/c2000ware_libraries.cmd.genlibs \
@@ -85,6 +87,8 @@ GEN_MISC_FILES__QUOTED += \
 "syscfg\board.cmd.genlibs" \
 "syscfg\board.json" \
 "syscfg\pinmux.csv" \
+"syscfg\epwm.dot" \
+"syscfg\adc.dot" \
 "syscfg\device_cmd.h" \
 "syscfg\device_cmd.cmd.genlibs" \
 "syscfg\c2000ware_libraries.cmd.genlibs" \

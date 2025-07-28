@@ -32,8 +32,8 @@ typedef struct
 } Protocol_Header_t;
 
 
-void protocolSendData(unsigned int sci_base, void *data, uint16_t size);
-void protocolReceiveData(unsigned int sci_base, void *data, uint16_t size);
+//void protocolSendData(unsigned int sci_base, void *data, uint16_t size);
+//void protocolReceiveData(unsigned int sci_base, void *data, uint16_t size);
 
 
 #endif /* SRC_SCICOMM_H_ */
