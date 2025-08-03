@@ -3,18 +3,16 @@
 #include "shared_vars.h"
 
 // Coeficientes do controlador (substitua com os valores do Python)
+#define B0  0.0f       // b0
+#define B1 -33.63f     // b1
+#define B2  39.36f     // b2
+#define A1 -1.778f     // -a1
+#define A2  0.8083f    // -a2
 
-#define B0  0.03054f
-#define B1 -0.05383f
-#define B2  0.02414f
-#define A1  0.3136f
-#define A2  0.6864f
-
-
-#define REF 96.0f  // tensão de referência
-#define UL 1.0f    // limite superior do duty
-#define LL 0.0f    // limite inferior do duty
-#define tbprd 5000f
+//#define REF 96.0f  // tensão de referência
+#define UL 0.989f    // limite superior do duty
+#define LL 0.011f    // limite inferior do duty
+#define tbprd 2500.0f
 float x[3];  // erro: x[0] = e[k], x[1] = e[k-1], x[2] = e[k-2]
 float y[3];  // saída: y[0] = u[k], y[1] = u[k-1], y[2] = u[k-2] (não usado aqui)
 //uint16_t cmpa_val = (uint16_t)(tbprd * duty);
@@ -23,22 +21,32 @@ float y[3];  // saída: y[0] = u[k], y[1] = u[k-1], y[2] = u[k-2] (não usado aqui
 //    EPWM_setCounterCompareValue(EPWM1_BASE, EPWM_COUNTER_COMPARE_A, cmpa_val);
 __interrupt void Cla1Task1()
 {
-    // Atualiza histórico
-    x[2] = x[1];
-    x[1] = x[0];
-    x[0] = REF -  (ADC_readResult(ADC0_RESULT_BASE, ADC0_SOC0)) * 132.0f / 4095.0f ;  // erro atual
+    // Atualiza histórico de erros
+       x[2] = x[1];
+       x[1] = x[0];
+       x[0] = fVal;  // Erro atual já calculado (REF - Vout)
 
-    y[2] = y[1];
-    y[1] = y[0];
+       // Atualiza histórico de saídas
+       y[2] = y[1];
+       y[1] = y[0];
 
-    // Equação à diferenças (ordem 2)
-    y[0] = B0*x[0] + B1*x[1] + B2*x[2] - A1*y[1] - A2*y[2];
-
-    // Saturação
-    if (y[0] > UL) y[0] = UL;
-    if (y[0] < LL) y[0] = LL;
-
-    fResult = y[0];  // duty cycle
-    debug_d = fResult;
-    EPWM_setCounterCompareValue(EPWM1_BASE, EPWM_COUNTER_COMPARE_A, (uint16_t)(5000 * fResult)); //tbrpd = 5000
+       // Calcula nova saída do controlador
+       y[0] = B0*x[0] + B1*x[1] + B2*x[2] - A1*y[1] - A2*y[2];
+//       debug_d = y[0];
+       // Saturação
+       if (y[0] > UL) {
+           y[0] = UL;
+           //x[0] = 0.0f;
+       } else if (y[0] < LL) {
+           y[0] = LL;
+           //x[0] = 0.0f;
+       }
+       // Atualiza saída
+       fResult = 1 - y[0];
+         // Para monitoramento
+       debug_d = fResult;
+       // Aplica o duty cycle
+       EPWM_setCounterCompareValue(EPWM1_BASE,
+                                 EPWM_COUNTER_COMPARE_A,
+                                 (uint16_t)(tbprd * fResult));
 }

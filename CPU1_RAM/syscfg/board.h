@@ -77,13 +77,13 @@ extern "C"
 // ADC Configurations
 //
 //*****************************************************************************
-#define ADC0_BASE ADCA_BASE
-#define ADC0_RESULT_BASE ADCARESULT_BASE
+#define ADC0_BASE ADCC_BASE
+#define ADC0_RESULT_BASE ADCCRESULT_BASE
 #define ADC0_SOC0 ADC_SOC_NUMBER0
 #define ADC0_FORCE_SOC0 ADC_FORCE_SOC0
 #define ADC0_SAMPLE_WINDOW_SOC0 75
 #define ADC0_TRIGGER_SOURCE_SOC0 ADC_TRIGGER_EPWM1_SOCA
-#define ADC0_CHANNEL_SOC0 ADC_CH_ADCIN0
+#define ADC0_CHANNEL_SOC0 ADC_CH_ADCIN5
 void ADC0_init();
 
 
@@ -102,6 +102,16 @@ void ADC0_init();
 __attribute__((interrupt)) void Cla1Task1();
 void myCLA0_init();
 
+
+//*****************************************************************************
+//
+// CMPSS Configurations
+//
+//*****************************************************************************
+#define myCMPSS0_BASE CMPSS4_BASE
+#define myCMPSS0_HIGH_COMP_BASE CMPSS4_BASE    
+#define myCMPSS0_LOW_COMP_BASE CMPSS4_BASE    
+void myCMPSS0_init();
 
 //*****************************************************************************
 //
@@ -125,18 +135,28 @@ void DAC0_init();
 //
 //*****************************************************************************
 #define myEPWM1_BASE EPWM1_BASE
-#define myEPWM1_TBPRD 5000
+#define myEPWM1_TBPRD 2500
 #define myEPWM1_COUNTER_MODE EPWM_COUNTER_MODE_UP_DOWN
 #define myEPWM1_TBPHS 0
-#define myEPWM1_CMPA 2500
+#define myEPWM1_CMPA 1250
 #define myEPWM1_CMPB 1
 #define myEPWM1_CMPC 0
 #define myEPWM1_CMPD 0
 #define myEPWM1_DBRED 0
 #define myEPWM1_DBFED 0
-#define myEPWM1_TZA_ACTION EPWM_TZ_ACTION_HIGH_Z
+#define myEPWM1_TZA_ACTION EPWM_TZ_ACTION_LOW
 #define myEPWM1_TZB_ACTION EPWM_TZ_ACTION_HIGH_Z
+#define myEPWM1_OSHT_SOURCES EPWM_TZ_SIGNAL_OSHT4
 #define myEPWM1_INTERRUPT_SOURCE EPWM_INT_TBCTR_ZERO
+
+//*****************************************************************************
+//
+// EPWMXBAR Configurations
+//
+//*****************************************************************************
+void myEPWMXBAR0_init();
+#define myEPWMXBAR0 XBAR_TRIP4
+#define myEPWMXBAR0_ENABLED_MUXES (XBAR_MUX00)
 
 //*****************************************************************************
 //
@@ -195,9 +215,11 @@ void myGPIO0_XINT_init();
 void	Board_init();
 void	ADC_init();
 void	CLA_init();
+void	CMPSS_init();
 void	CPUTIMER_init();
 void	DAC_init();
 void	EPWM_init();
+void	EPWMXBAR_init();
 void	GPIO_init();
 void	INPUTXBAR_init();
 void	INTERRUPT_init();

@@ -28,36 +28,39 @@ extern float debug_d;
 #define N_STEPS_PER_CYCLE      (uint32_t)(T_PWM / DT_SIM) // Passos por ciclo PWM
 #define Vref_dac                3.3f   // REFERENCIA PARA O DAC
 #define ValmaxDAC               4095   // VALOR MAXIMO DAC
-#define INV_DAC                 ((4095/132))
-#define INV_ADC                 ((float)((1/132)*4095))  //
-#define VOLT2DAC                ValmaxDAC/Vref_dac
+#define INV_DAC                 ((4095/300))
+#define INV_ADC                 ((float)((1/300)*4095))  //
+#define inv 0.0732600f //300.0f / 4095.0f
+//#define VOLT2DAC                ValmaxDAC/Vref_dac
+#define inv_amp                 81.9f//4095.0f / 50.0f
 // Parâmetros do Conversor BOOST
 #define VIN                    48.0f           // Tensão de entrada (V)
 #define L                      0.0004f          // Indutância (H)
 #define C                      0.000047f        // Capacitância (F)
 #define R_LOAD                 5.0f           // Carga resistiva (Ohm)
-#define ESCALA                 Vref_dac/VIN
 
 // Constantes auxiliares
 #define INV_L                  (DT_SIM / L)
 #define INV_C                  (DT_SIM / C)
 #define INV_R_LOAD             (1.0f / R_LOAD)
-#define TAM_BUFFER_DAC         1000
-#define TAM_BUFFER_ADC         1000
-#define BUFFER_SIZE            200             // Tamanho do buffer de resultados
+#define TAM_BUFFER_DAC         50
+#define TAM_BUFFER_ADC         50
+#define BUFFER_SIZE            500             // Tamanho do buffer de resultados
 //
 // Variáveis Globais da Simulação
 //
-volatile float32_t g_vout_sim = 48.0f;          // Tensão de saída simulada
+
+volatile float32_t g_vout_sim = 0;          // Tensão de saída simulada
 volatile float32_t vo = 0;
-volatile float32_t g_il_sim   = 0.0f;          // Corrente no indutor simulada
-volatile uint32_t  g_step_counter = 0;         // Contador de passos dentro do ciclo PWM
-volatile bool      g_switch_on = false;        // Estado da chave (true = ligada)
-volatile bool      g_new_step_ready = false;   // Flag para novo passo de simulação
-volatile float     g_duty_cycle = 0.5f;        // Razão cíclica (entre 0 e 1)
-volatile uint16_t adc_buffer;//[TAM_BUFFER_ADC];
-volatile uint16_t dac_buffer[TAM_BUFFER_DAC];
-volatile float32_t  results[BUFFER_SIZE];                    // Vetor com valores simulados de tensão
+volatile float32_t g_il_sim = 0.0f;          // Corrente no indutor simulada
+volatile uint32_t g_step_counter = 0;  // Contador de passos dentro do ciclo PWM
+volatile bool g_switch_on = false;        // Estado da chave (true = ligada)
+volatile bool g_new_step_ready = false;   // Flag para novo passo de simulação
+volatile float g_duty_cycle = 0.5f;        // Razão cíclica (entre 0 e 1)
+volatile uint16_t adc_buffer;        //[TAM_BUFFER_ADC];
+volatile uint16_t dac_buffer = 0;
+volatile float32_t results[BUFFER_SIZE]; // Vetor com valores simulados de tensão
+volatile float32_t REF = 96.0f;
 int idx = 0;                                   // Índice circular para o buffer
 float flag = 0;
 volatile bool g_doSimulation = false;
@@ -72,15 +75,16 @@ float debug_d;
 __interrupt void xint1_isr(void)
 {
     //XINT1Count = 1; // Incrementa o contador de interrupções
-    if(GPIO_readPin(122) && flag == 0)
+    if (GPIO_readPin(122) && flag == 0)
     {
-        g_switch_on  = true;
+        g_switch_on = true;
+
         flag = 1;
     }
     else
     {
         flag = 0;
-        g_switch_on  = false;
+        g_switch_on = false;
     }
     // Reconhece a interrupção no PIE
     Interrupt_clearACKGroup(INTERRUPT_ACK_GROUP1);
@@ -98,7 +102,6 @@ __interrupt void xint1_isr(void)
 //    ADC_clearInterruptStatus(ADC0_BASE, ADC_INT_NUMBER1);
 //    Interrupt_clearACKGroup(INT_ADC0_1_INTERRUPT_ACK_GROUP);
 //}
-
 //
 // Função principal
 //
@@ -127,29 +130,33 @@ void main(void)
     //
     while (1)
     {
-        if(g_new_step_ready)
+        if (g_new_step_ready)
         {
-                g_new_step_ready = false;
-                // Cálculo da tensão no indutor
-                //v_l = g_doSimulation ? (VIN) : (VIN - g_vout_sim);
-                v_l = g_switch_on ? VIN : (VIN - g_vout_sim);
+            fVal = (REF - (ADC_readResult(ADCCRESULT_BASE, ADC_SOC_NUMBER0)) * inv);//ADC_readResult(ADCCRESULT_BASE, ADC_SOC_NUMBER0);
+            CLA_forceTasks(CLA1_BASE, CLA_TASKFLAG_1);
 
-                //i_c = g_doSimulation ? (-g_vout_sim * INV_R_LOAD) : ( g_il_sim - (g_vout_sim * INV_R_LOAD));
-                i_c = g_switch_on ? (-g_vout_sim * INV_R_LOAD) : (g_il_sim - (g_vout_sim * INV_R_LOAD));
+            g_new_step_ready = false;
+            // Cálculo da tensão no indutor
+            v_l = g_switch_on ? VIN : (VIN - g_vout_sim);
 
-                // Integração (Euler)
-                g_il_sim   += INV_L * v_l;
-                g_vout_sim += INV_C * i_c;
-                vo = g_vout_sim;
-//                if (vo > 132) vo = 4095;
-//                if (vo < 0.0f) vo = 0.0f;
+            i_c = g_switch_on ?(-g_vout_sim * INV_R_LOAD) : (g_il_sim - (g_vout_sim * INV_R_LOAD));
 
-                dac_buffer[cnt_dac] = (uint16_t)(vo * INV_DAC);
-                DAC_setShadowValue(DAC0_BASE, (( dac_buffer[cnt_dac]))); // O DAC é de 16 bits e os valores são de 16 bits por isso a divisão
-                results[cnt_dac] = ((float)g_vout_sim);
-                g_doSimulation = false;
-                idx = (idx + 1) % BUFFER_SIZE;
-                cnt_dac = (cnt_dac + 1) % TAM_BUFFER_DAC;
+            // Integração (Euler)
+            g_il_sim += INV_L * v_l;
+            g_vout_sim += INV_C * i_c;
+            vo = g_il_sim;
+
+            dac_buffer = ((uint16_t) (vo * INV_DAC)) - 96;
+            if(dac_buffer > 4095)
+            {
+                dac_buffer = ((uint16_t)(4095));
+            }
+
+            DAC_setShadowValue(DAC0_BASE, ((dac_buffer))); // O DAC é de 16 bits
+            results[idx] = g_vout_sim;//(ADC_readResult(ADC0_RESULT_BASE, ADC0_SOC0)) * inv;                //* inv_amp;
+            g_doSimulation = false;
+            idx = (idx + 1) % BUFFER_SIZE;
+            cnt_dac = (cnt_dac + 1) % TAM_BUFFER_DAC;
 
         }
 
