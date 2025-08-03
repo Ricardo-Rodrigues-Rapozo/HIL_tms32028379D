@@ -1,5 +1,5 @@
 //
-// Arquivos de Inclusão
+// Arquivos de InclusÃ£o
 //
 #include "driverlib.h"
 #include "device.h"
@@ -8,23 +8,23 @@
 #include "math.h"
 
 //
-// Comunicação CLA
+// ComunicaÃ§Ã£o CLA
 //
 #pragma DATA_SECTION(fVal,    "CpuToCla1MsgRAM");
 #pragma DATA_SECTION(fResult, "Cla1ToCpuMsgRAM");
 #pragma DATA_SECTION(debug_d, "Cla1ToCpuMsgRAM");
 
-// Comunicação com a CPU através da RAM de mensagem
+// ComunicaÃ§Ã£o com a CPU atravÃ©s da RAM de mensagem
 extern float fVal;
 extern float fResult;
 extern float debug_d;
 
 //
-// Definições de Constantes
+// DefiniÃ§Ãµes de Constantes
 //
-#define F_PWM                  10000.0f        // Frequência de chaveamento (Hz)
-#define T_PWM                  (1.0f / F_PWM)  // Período de chaveamento (s)
-#define DT_SIM                 0.000005f       // Passo de simulação (5 µs)
+#define F_PWM                  10000.0f        // FrequÃªncia de chaveamento (Hz)
+#define T_PWM                  (1.0f / F_PWM)  // PerÃ­odo de chaveamento (s)
+#define DT_SIM                 0.000005f       // Passo de simulaÃ§Ã£o (5 Âµs)
 #define N_STEPS_PER_CYCLE      (uint32_t)(T_PWM / DT_SIM) // Passos por ciclo PWM
 #define Vref_dac                3.3f   // REFERENCIA PARA O DAC
 #define ValmaxDAC               4095   // VALOR MAXIMO DAC
@@ -33,10 +33,10 @@ extern float debug_d;
 #define inv 0.0732600f //300.0f / 4095.0f
 //#define VOLT2DAC                ValmaxDAC/Vref_dac
 #define inv_amp                 81.9f//4095.0f / 50.0f
-// Parâmetros do Conversor BOOST
-#define VIN                    48.0f           // Tensão de entrada (V)
-#define L                      0.0004f          // Indutância (H)
-#define C                      0.000047f        // Capacitância (F)
+// ParÃ¢metros do Conversor BOOST
+#define VIN                    48.0f           // TensÃ£o de entrada (V)
+#define L                      0.0004f          // IndutÃ¢ncia (H)
+#define C                      0.000047f        // CapacitÃ¢ncia (F)
 #define R_LOAD                 5.0f           // Carga resistiva (Ohm)
 
 // Constantes auxiliares
@@ -47,21 +47,21 @@ extern float debug_d;
 #define TAM_BUFFER_ADC         50
 #define BUFFER_SIZE            500             // Tamanho do buffer de resultados
 //
-// Variáveis Globais da Simulação
+// VariÃ¡veis Globais da SimulaÃ§Ã£o
 //
 
-volatile float32_t g_vout_sim = 0;          // Tensão de saída simulada
+volatile float32_t g_vout_sim = 0;          // TensÃ£o de saÃ­da simulada
 volatile float32_t vo = 0;
 volatile float32_t g_il_sim = 0.0f;          // Corrente no indutor simulada
 volatile uint32_t g_step_counter = 0;  // Contador de passos dentro do ciclo PWM
 volatile bool g_switch_on = false;        // Estado da chave (true = ligada)
-volatile bool g_new_step_ready = false;   // Flag para novo passo de simulação
-volatile float g_duty_cycle = 0.5f;        // Razão cíclica (entre 0 e 1)
+volatile bool g_new_step_ready = false;   // Flag para novo passo de simulaÃ§Ã£o
+volatile float g_duty_cycle = 0.5f;        // RazÃ£o cÃ­clica (entre 0 e 1)
 volatile uint16_t adc_buffer;        //[TAM_BUFFER_ADC];
 volatile uint16_t dac_buffer = 0;
-volatile float32_t results[BUFFER_SIZE]; // Vetor com valores simulados de tensão
+volatile float32_t results[BUFFER_SIZE]; // Vetor com valores simulados de tensÃ£o
 volatile float32_t REF = 96.0f;
-int idx = 0;                                   // Índice circular para o buffer
+int idx = 0;                                   // Ãndice circular para o buffer
 float flag = 0;
 volatile bool g_doSimulation = false;
 static uint16_t cnt_dac = 0;
@@ -74,7 +74,7 @@ float debug_d;
 
 __interrupt void xint1_isr(void)
 {
-    //XINT1Count = 1; // Incrementa o contador de interrupções
+    //XINT1Count = 1; // Incrementa o contador de interrupÃ§Ãµes
     if (GPIO_readPin(122) && flag == 0)
     {
         g_switch_on = true;
@@ -86,12 +86,12 @@ __interrupt void xint1_isr(void)
         flag = 0;
         g_switch_on = false;
     }
-    // Reconhece a interrupção no PIE
+    // Reconhece a interrupÃ§Ã£o no PIE
     Interrupt_clearACKGroup(INTERRUPT_ACK_GROUP1);
 }
 
 //
-// Interrupção do ADC
+// InterrupÃ§Ã£o do ADC
 //
 //__interrupt void INT_ADC0_1_ISR(void)
 //{
@@ -103,13 +103,13 @@ __interrupt void xint1_isr(void)
 //    Interrupt_clearACKGroup(INT_ADC0_1_INTERRUPT_ACK_GROUP);
 //}
 //
-// Função principal
+// FunÃ§Ã£o principal
 //
 void main(void)
 {
     float32_t v_l, i_c;
 
-    // Inicialização
+    // InicializaÃ§Ã£o
     Device_init();
 
     Interrupt_initModule();
@@ -121,12 +121,12 @@ void main(void)
 
 //    SysCtl_enablePeripheral(SYSCTL_PERIPH_CLK_TBCLKSYNC);
 
-    // Habilita interrupções globais
+    // Habilita interrupÃ§Ãµes globais
     EINT;
     ERTM;
 
     //
-    // Loop principal da simulação
+    // Loop principal da simulaÃ§Ã£o
     //
     while (1)
     {
@@ -136,15 +136,15 @@ void main(void)
             CLA_forceTasks(CLA1_BASE, CLA_TASKFLAG_1);
 
             g_new_step_ready = false;
-            // Cálculo da tensão no indutor
+            // CÃ¡lculo da tensÃ£o no indutor
             v_l = g_switch_on ? VIN : (VIN - g_vout_sim);
 
             i_c = g_switch_on ?(-g_vout_sim * INV_R_LOAD) : (g_il_sim - (g_vout_sim * INV_R_LOAD));
 
-            // Integração (Euler)
+            // IntegraÃ§Ã£o (Euler)
             g_il_sim += INV_L * v_l;
             g_vout_sim += INV_C * i_c;
-            vo = g_il_sim;
+            vo = g_vout_sim;
 
             dac_buffer = ((uint16_t) (vo * INV_DAC)) - 96;
             if(dac_buffer > 4095)
@@ -152,7 +152,7 @@ void main(void)
                 dac_buffer = ((uint16_t)(4095));
             }
 
-            DAC_setShadowValue(DAC0_BASE, ((dac_buffer))); // O DAC é de 16 bits
+            DAC_setShadowValue(DAC0_BASE, ((dac_buffer))); // O DAC Ã© de 16 bits
             results[idx] = g_vout_sim;//(ADC_readResult(ADC0_RESULT_BASE, ADC0_SOC0)) * inv;                //* inv_amp;
             g_doSimulation = false;
             idx = (idx + 1) % BUFFER_SIZE;
@@ -163,13 +163,13 @@ void main(void)
     }
 }
 //
-// Interrupção do Timer (gera novo passo de simulação HIL)
+// InterrupÃ§Ã£o do Timer (gera novo passo de simulaÃ§Ã£o HIL)
 //
 __interrupt void INT_myCPUTIMER1_ISR(void)
 {
     g_new_step_ready = true;
 
-    // Libera nova interrupção
+    // Libera nova interrupÃ§Ã£o
     Interrupt_clearACKGroup(INTERRUPT_ACK_GROUP1);
 }
 
