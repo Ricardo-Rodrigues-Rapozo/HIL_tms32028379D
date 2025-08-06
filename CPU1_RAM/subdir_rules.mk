@@ -8,7 +8,7 @@ SHELL = cmd.exe
 build-1806428945: ../cla_example.syscfg
 	@echo 'Building file: "$<"'
 	@echo 'Invoking: SysConfig'
-	"C:/ti/ccs1281/ccs/utils/sysconfig_1.21.0/sysconfig_cli.bat" --script "C:/Users/Ricardo/Documents/Ramon/cla_example/cla_example.syscfg" -o "syscfg" -s "C:/ti/c2000/C2000Ware_5_04_00_00/.metadata/sdk.json" -b "/boards/LAUNCHXL_F28379D" --compiler ccs
+	"D:/ti/sysconfig_1.24.0/sysconfig_cli.bat" --script "C:/Users/Ricardo/Documents/Ramon/cla_example/cla_example.syscfg" -o "syscfg" -s "C:/ti/c2000/C2000Ware_5_04_00_00/.metadata/sdk.json" -b "/boards/LAUNCHXL_F28379D" --compiler ccs
 	@echo 'Finished building: "$<"'
 	@echo ' '
 

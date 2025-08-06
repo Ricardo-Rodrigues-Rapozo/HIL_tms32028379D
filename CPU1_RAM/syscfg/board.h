@@ -86,6 +86,15 @@ extern "C"
 #define ADC0_CHANNEL_SOC0 ADC_CH_ADCIN5
 void ADC0_init();
 
+#define overiL_BASE ADCA_BASE
+#define overiL_RESULT_BASE ADCARESULT_BASE
+#define overiL_SOC0 ADC_SOC_NUMBER0
+#define overiL_FORCE_SOC0 ADC_FORCE_SOC0
+#define overiL_SAMPLE_WINDOW_SOC0 75
+#define overiL_TRIGGER_SOURCE_SOC0 ADC_TRIGGER_EPWM1_SOCA
+#define overiL_CHANNEL_SOC0 ADC_CH_ADCIN4
+void overiL_init();
+
 
 //*****************************************************************************
 //
@@ -108,10 +117,10 @@ void myCLA0_init();
 // CMPSS Configurations
 //
 //*****************************************************************************
-#define myCMPSS0_BASE CMPSS4_BASE
-#define myCMPSS0_HIGH_COMP_BASE CMPSS4_BASE    
-#define myCMPSS0_LOW_COMP_BASE CMPSS4_BASE    
-void myCMPSS0_init();
+#define myCMPSS2_BASE CMPSS2_BASE
+#define myCMPSS2_HIGH_COMP_BASE CMPSS2_BASE    
+#define myCMPSS2_LOW_COMP_BASE CMPSS2_BASE    
+void myCMPSS2_init();
 
 //*****************************************************************************
 //
@@ -128,6 +137,8 @@ void myCPUTIMER1_init();
 //*****************************************************************************
 #define DAC0_BASE DACB_BASE
 void DAC0_init();
+#define Overcurrent_BASE DACA_BASE
+void Overcurrent_init();
 
 //*****************************************************************************
 //
@@ -146,7 +157,8 @@ void DAC0_init();
 #define myEPWM1_DBFED 0
 #define myEPWM1_TZA_ACTION EPWM_TZ_ACTION_LOW
 #define myEPWM1_TZB_ACTION EPWM_TZ_ACTION_HIGH_Z
-#define myEPWM1_OSHT_SOURCES EPWM_TZ_SIGNAL_OSHT4
+#define myEPWM1_OSHT_SOURCES EPWM_TZ_SIGNAL_DCAEVT1
+#define myEPWM1_CBC_SOURCES EPWM_TZ_SIGNAL_DCAEVT2
 #define myEPWM1_INTERRUPT_SOURCE EPWM_INT_TBCTR_ZERO
 
 //*****************************************************************************
@@ -154,9 +166,9 @@ void DAC0_init();
 // EPWMXBAR Configurations
 //
 //*****************************************************************************
-void myEPWMXBAR0_init();
-#define myEPWMXBAR0 XBAR_TRIP4
-#define myEPWMXBAR0_ENABLED_MUXES (XBAR_MUX00)
+void myEPWMXBAR4_init();
+#define myEPWMXBAR4 XBAR_TRIP4
+#define myEPWMXBAR4_ENABLED_MUXES (XBAR_MUX02)
 
 //*****************************************************************************
 //
@@ -180,6 +192,12 @@ void myINPUTXBARINPUT0_init();
 // INTERRUPT Configurations
 //
 //*****************************************************************************
+
+// Interrupt Settings for INT_overiL_1
+// ISR need to be defined for the registered interrupts
+#define INT_overiL_1 INT_ADCA1
+#define INT_overiL_1_INTERRUPT_ACK_GROUP INTERRUPT_ACK_GROUP1
+extern __interrupt void INT_overiL_1_ISR(void);
 
 // Interrupt Settings for INT_myCPUTIMER1
 // ISR need to be defined for the registered interrupts
